@@ -165,6 +165,10 @@ type TCPPortHandler struct {
 	ProxyProtocol int `json:",omitzero"`
 }
 
+// BackendHTTPH2C is the [HTTPHandler.BackendHTTP] value that selects HTTP/2
+// over cleartext.
+const BackendHTTPH2C = "h2c"
+
 // HTTPHandler is either a path or a proxy to serve.
 type HTTPHandler struct {
 	// Exactly one of the following may be set.
@@ -175,6 +179,19 @@ type HTTPHandler struct {
 	Text string `json:",omitempty"` // plaintext to serve (primarily for testing)
 
 	AcceptAppCaps []peercap.Cap `json:",omitempty"` // peer capabilities to forward in grant header, e.g. example.com/cap/mon
+
+	// BackendHTTP is the HTTP version that tailscaled uses to reach Proxy.
+	// It is only used if Proxy is non-empty.
+	//
+	// If empty, tailscaled uses HTTP/1.1 to a plaintext backend, except that
+	// it uses HTTP/2 over cleartext (h2c) for HTTP/2 requests with a gRPC
+	// content type. A TLS backend negotiates the version with ALPN.
+	//
+	// If [BackendHTTPH2C], tailscaled uses h2c for every request to the
+	// backend other than HTTP/1.1 Upgrade requests, which HTTP/2 cannot
+	// carry. It is valid only for a plaintext backend (an http:// URL or a
+	// Unix socket).
+	BackendHTTP string `json:",omitempty"`
 
 	// Redirect, if not empty, is the target URL to redirect requests to.
 	// By default, we redirect with HTTP 302 (Found) status.
